@@ -411,7 +411,6 @@ BOOL isFirstTime;
             [svc syncFailed:[errors objectAtIndex:0]];
         };
         
-        // Sync only with dates
         [sharedAppDelegate syncWithType:SYNC_TYPE_WITH_DATES completionBlock:completionBlock errorBlock:errorBlock];
     }
     else
