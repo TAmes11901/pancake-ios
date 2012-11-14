@@ -269,9 +269,9 @@
     
     dbSession.completionBlock = ^(NSArray* data){
         
-        self.beanId = nil;
-        self.beanTitle = @"";
-        self.navigationController.title = @"";
+        dvc.beanId = nil;
+        dvc.beanTitle = @"";
+        dvc.navigationController.title = @"";
         
         SyncHandler * syncHandler = [SyncHandler sharedInstance];
         

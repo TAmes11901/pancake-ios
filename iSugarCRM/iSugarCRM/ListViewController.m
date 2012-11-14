@@ -32,6 +32,7 @@
     UIActivityIndicatorView* activityIndicator;
     UILabel* syncLabel;
     BOOL searchCancelled;
+    BOOL isDeleting;
 }
 -(void) showProgress;
 -(void) hideProgress;
@@ -245,20 +246,37 @@
 -(void)loadData
 {
     DBSessionCompletionBlock completionBlock = ^(NSArray* records){
-        NSMutableArray* visibleRecords = [[NSMutableArray alloc] init];
+//        NSMutableArray* visibleRecords = [[NSMutableArray alloc] init];
+        NSString *beanId = nil;
+        [tableData removeAllObjects];
+        for (DataObject* dataObject in datasource) {
+            beanId = (NSString *)[dataObject objectForFieldName:@"id"];
+            if(![beanId hasPrefix:LOCAL_ID_PREFIX])
+            {
+                [tableData addObject:dataObject];
+            }
+            else
+            {
+                NSLog(@"NO PREFIX");
+            }
+        }
         for(DataObject* dataObject in records)
         {
             if(![[dataObject objectForFieldName:@"deleted"] isEqualToString:@"1"])
             {
-                [visibleRecords addObject:dataObject];
+                [tableData addObject:dataObject];
             }
         }
-        datasource = visibleRecords;
-        [tableData removeAllObjects];
-        [tableData addObjectsFromArray:datasource];
-        //[self sortData];
         
-        NSLog(@"Number of records in module %@ : %d", self.moduleName, records.count);
+//        datasource = visibleRecords;
+//        [tableData removeAllObjects];
+//        [tableData addObjectsFromArray:datasource];
+        [self sortData];
+//        [tableData addObjectsFromArray:visibleRecords];
+        datasource = nil;
+        datasource = [tableData copy];
+        
+        NSLog(@"Number of records in module %@ : %d", self.moduleName, tableData.count);
         // Load UI on mail queue
         dispatch_async(dispatch_get_main_queue(), ^(void){
             [myTableView reloadData];
@@ -274,7 +292,7 @@
     dbSession.errorBlock = errorBlock;
 //    [dbSession startLoading];
     NSString *orderField = [[NSUserDefaults standardUserDefaults] objectForKey:[NSString stringWithFormat:@"key_%@_%@",moduleName,kSettingTitleForSortField]];
-    [dbSession rowsFromDBWithLimit:kRowLimit andOffset:0 orderBy:orderField];
+    [dbSession rowsFromDBWithLimit:kRowLimit andOffset:[datasource count] orderBy:orderField];
 }
 
 -(void)addRows
@@ -285,21 +303,24 @@
         [lvc.tableData removeAllObjects];
         [lvc.tableData addObjectsFromArray:lvc.datasource];
         lvc.datasource = nil;
+        int visibleRecordCount = 0;
         for(DataObject* dataObject in records)
         {
             if(![[dataObject objectForFieldName:@"deleted"] isEqualToString:@"1"])
             {
                 [lvc.tableData addObject:dataObject];
+                visibleRecordCount++;
             }
         }
         lvc.datasource = [lvc.tableData copy];
+        [self sortData];
         NSLog(@"%d<----Number of records into datasource now",[lvc.datasource count]);
-        if ([records count]>0) {
-                [myTableView beginUpdates];
+        if (visibleRecordCount>0) {
                 NSMutableArray* newRecords = [[NSMutableArray alloc] init];
                 for (int i=0; i<newRowCount; i++) {
                     [newRecords addObject:[NSIndexPath indexPathForRow:[lvc.tableData count]-newRowCount+i inSection:0]];
                 }
+                [myTableView beginUpdates];
                 [myTableView insertRowsAtIndexPaths:newRecords withRowAnimation:UITableViewRowAnimationLeft];
                 [myTableView endUpdates];
         }
@@ -507,10 +528,12 @@
 #pragma mark - Table view delegate
 - (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath
 {
-	NSUInteger row = [indexPath row]+1;
-    NSUInteger count = [tableData count];
-    if (row == count) {
+    if (!isDeleting) {
+        NSUInteger row = [indexPath row]+1;
+        NSUInteger count = [tableData count];
+        if (row == count) {
 			[self performSelector:@selector(addRows) withObject:nil afterDelay:.1];
+        }
     }
 }
 
@@ -551,17 +574,18 @@
 
 -(void) deleteButtonPressed
 {
+    isDeleting = TRUE;
     NSArray *selectedRows = [[NSArray alloc] initWithArray: [myTableView indexPathsForSelectedRows]];
     
     NSMutableIndexSet *indexSetToDelete = [[NSMutableIndexSet alloc] init];
-    NSMutableIndexSet *dsIndexSetToDelete = [[NSMutableIndexSet alloc] init];
-    NSMutableArray* copy = [self.datasource mutableCopy];
+//    NSMutableIndexSet *dsIndexSetToDelete = [[NSMutableIndexSet alloc] init];
+//    NSMutableArray* copy = [self.datasource mutableCopy];
     NSMutableArray* dbData = [[NSMutableArray alloc] initWithCapacity:[selectedRows count]];
     
     for (NSIndexPath *indexPath in selectedRows)
     {
         [indexSetToDelete addIndex:indexPath.row];
-        [dsIndexSetToDelete addIndex:[self.datasource indexOfObject:[self.tableData objectAtIndex:indexPath.row]]];
+//        [dsIndexSetToDelete addIndex:[self.datasource indexOfObject:[self.tableData objectAtIndex:indexPath.row]]];
         
         DataObject* dataObject = (DataObject *)[self.tableData objectAtIndex:indexPath.row];
         [dataObject setObject:@"1" forFieldName:@"deleted"];
@@ -569,15 +593,19 @@
     }
     
     [self.tableData removeObjectsAtIndexes:indexSetToDelete];
-    [copy removeObjectsAtIndexes:dsIndexSetToDelete];
-    self.datasource = [[NSArray alloc] initWithArray:copy];
-    [myTableView deleteRowsAtIndexPaths:selectedRows withRowAnimation:UITableViewRowAnimationAutomatic];    
+//    [copy removeObjectsAtIndexes:dsIndexSetToDelete];
+    self.datasource = nil;
+    self.datasource = [[NSArray alloc] initWithArray:[self.tableData copy]];
+//    [myTableView deleteRowsAtIndexPaths:selectedRows withRowAnimation:UITableViewRowAnimationAutomatic];
     
     __weak ListViewController* lvc = self;
    
     DBSession * dbSession = [DBSession sessionForModule:self.moduleName];
     
     dbSession.completionBlock = ^(NSArray* data){
+        [myTableView beginUpdates];
+        [myTableView deleteRowsAtIndexPaths:selectedRows withRowAnimation:UITableViewRowAnimationAutomatic];
+        [myTableView endUpdates];
         [lvc syncModule];
     };
     
@@ -588,8 +616,9 @@
     [dbSession insertDataObjectsInDb:dbData dirty:YES];
     
     [self toggleEditing];
-    myTableView.contentInset = UIEdgeInsetsZero;
-    [myTableView reloadData];
+//    myTableView.contentInset = UIEdgeInsetsZero;
+//    [myTableView reloadData];
+    isDeleting = FALSE;
 }
 
 - (void)toggleEditing{
@@ -598,7 +627,7 @@
     if(!self.editing){
         [super setEditing:YES animated:YES];
         [myTableView setEditing:YES animated:YES];
-        [myTableView reloadData];
+//        [myTableView reloadData];
         self.navigationItem.rightBarButtonItem = nil;
         barButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Cancel" style:UIBarButtonItemStyleDone target:self action:@selector(toggleEditing)];
        // self.navigationItem.rightBarButtonItem = barButtonItem;
@@ -616,7 +645,7 @@
     }else{
         [super setEditing:NO animated:YES];
         [myTableView setEditing:NO animated:YES];
-        [myTableView reloadData];
+//        [myTableView reloadData];
         self.navigationItem.rightBarButtonItem = nil;
         barButtonItem = [[UIBarButtonItem alloc] initWithCustomView:self.segmentedControl];
         self.navigationItem.rightBarButtonItem = barButtonItem;

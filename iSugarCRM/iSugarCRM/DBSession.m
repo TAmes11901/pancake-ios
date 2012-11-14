@@ -101,7 +101,7 @@
     }else{
         sortOrderValue = @"ASC";
     }
-    NSString *sql = [NSString stringWithFormat:@"SELECT * FROM %@ ORDER BY %@  %@ LIMIT %d OFFSET %d;",metadata.tableName,orderField,sortOrderValue,rowLimit,offSet];
+    NSString *sql = [NSString stringWithFormat:@"SELECT * FROM %@ WHERE deleted = 0 ORDER BY %@  %@ LIMIT %d OFFSET %d;",metadata.tableName,orderField,sortOrderValue,rowLimit,offSet];
     sqlite3_stmt *stmt =[db executeQuery:sql error:&error];
     if (error) {
         NSLog(@"error retrieving data from database: %@",[error localizedDescription]);

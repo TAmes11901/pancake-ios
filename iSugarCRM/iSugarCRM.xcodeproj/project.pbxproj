@@ -1028,7 +1028,7 @@
 		3B5C9801147CF7BD007EF770 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "iPhone Distribution: Pramati Technologies";
+				CODE_SIGN_IDENTITY = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution: Pramati Technologies";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "iSugarCRM/iSugarCRM-Prefix.pch";
@@ -1040,7 +1040,6 @@
 					"\"$(SRCROOT)/iSugarCRM\"",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE = "EE2C6C72-3291-47AA-8DFD-E7B9DAAAF3D8";
 				"PROVISIONING_PROFILE[sdk=iphoneos*]" = "EE2C6C72-3291-47AA-8DFD-E7B9DAAAF3D8";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
