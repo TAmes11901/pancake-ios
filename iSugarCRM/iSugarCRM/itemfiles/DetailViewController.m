@@ -260,7 +260,7 @@
 
 -(void) deleteRecord
 {
-    DataObject* dataObject = [detailsArray objectAtIndex:0];
+    __block DataObject* dataObject = [detailsArray objectAtIndex:0];
     [dataObject setObject:@"1" forFieldName:@"deleted"];    
     
     DBSession * dbSession = [DBSession sessionForModule:self.metadata.moduleName];
@@ -293,7 +293,6 @@
     dbSession.errorBlock = ^(NSError* error){
         NSLog(@"Handle database error while saving a record : %@", [error localizedDescription]);
     };
-    
     [dbSession insertDataObjectsInDb:[NSArray arrayWithObject:dataObject] dirty:YES];
 }
 
@@ -339,7 +338,8 @@
     dispatch_async(dispatch_get_main_queue(), ^(void) {
         AppDelegate *sharedAppDelegate = (AppDelegate *)[UIApplication sharedApplication].delegate;
         [sharedAppDelegate dismissWaitingAlert];
-        [self.navigationController dismissModalViewControllerAnimated:YES];
+        //REMOVE BELOW LINE IF NOT REQUIRED
+//        [self.navigationController dismissModalViewControllerAnimated:YES];
         [[NSNotificationCenter defaultCenter]postNotificationName:@"ReloadRecords" object:nil];
         [self performSelector:@selector(showSyncAlert:) withObject:nil];
     });

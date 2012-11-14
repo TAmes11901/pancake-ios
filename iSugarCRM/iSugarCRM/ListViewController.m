@@ -47,10 +47,11 @@
 
 @property (strong) UIActionSheet *_actionSheet;
 @property(nonatomic, retain) UISegmentedControl *segmentedControl;
+@property(nonatomic, retain) NSString *invalidBean;
 @end
 
 @implementation ListViewController
-@synthesize moduleName,datasource,metadata, tableData;
+@synthesize moduleName,datasource,metadata, tableData,invalidBean;
 @synthesize segmentedControl;
 @synthesize _actionSheet;
 
@@ -245,21 +246,22 @@
 
 -(void)loadData
 {
+    __weak ListViewController *lvc = self;
     DBSessionCompletionBlock completionBlock = ^(NSArray* records){
-//        NSMutableArray* visibleRecords = [[NSMutableArray alloc] init];
         NSString *beanId = nil;
         [tableData removeAllObjects];
+        
         for (DataObject* dataObject in datasource) {
             beanId = (NSString *)[dataObject objectForFieldName:@"id"];
-            if(![beanId hasPrefix:LOCAL_ID_PREFIX])
+            //First condition in if may be useless
+            if(![beanId hasPrefix:LOCAL_ID_PREFIX] ||
+               ![beanId isEqualToString:self.invalidBean] ||
+               ![[dataObject objectForFieldName:@"deleted"] isEqualToString:@"1"])
             {
                 [tableData addObject:dataObject];
             }
-            else
-            {
-                NSLog(@"NO PREFIX");
-            }
         }
+        
         for(DataObject* dataObject in records)
         {
             if(![[dataObject objectForFieldName:@"deleted"] isEqualToString:@"1"])
@@ -268,11 +270,7 @@
             }
         }
         
-//        datasource = visibleRecords;
-//        [tableData removeAllObjects];
-//        [tableData addObjectsFromArray:datasource];
-        [self sortData];
-//        [tableData addObjectsFromArray:visibleRecords];
+        [lvc sortData];
         datasource = nil;
         datasource = [tableData copy];
         
@@ -555,6 +553,7 @@
             [appDelegate.recentItems setObject:[NSMutableArray arrayWithObject:beanId] forKey:moduleName];
         }
         DetailViewController *detailViewController = [DetailViewController detailViewcontroller:[[SugarCRMMetadataStore sharedInstance] detailViewMetadataForModule:metadata.moduleName] beanId:beanId beanTitle:beanTitle];
+        self.invalidBean = (NSString *)beanId;
         detailViewController.shouldCotainToolBar = YES;
          [self.navigationController pushViewController:detailViewController animated:YES];
     }
@@ -720,7 +719,7 @@
 }
 
 -(void)dealloc{
-
+    self.invalidBean = nil;
 }
 
 @end
