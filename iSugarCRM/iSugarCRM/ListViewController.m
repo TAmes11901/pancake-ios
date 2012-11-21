@@ -47,11 +47,11 @@
 
 @property (strong) UIActionSheet *_actionSheet;
 @property(nonatomic, retain) UISegmentedControl *segmentedControl;
-@property(nonatomic, retain) NSString *invalidBean;
+//@property(nonatomic, retain) NSString *invalidBean;
 @end
 
 @implementation ListViewController
-@synthesize moduleName,datasource,metadata, tableData,invalidBean;
+@synthesize moduleName,datasource,metadata, tableData;//invalidBean;
 @synthesize segmentedControl;
 @synthesize _actionSheet;
 
@@ -248,36 +248,42 @@
 {
     __weak ListViewController *lvc = self;
     DBSessionCompletionBlock completionBlock = ^(NSArray* records){
-        NSString *beanId = nil;
+//        NSString *beanId = nil;
         [tableData removeAllObjects];
         
-        for (DataObject* dataObject in datasource) {
-            beanId = (NSString *)[dataObject objectForFieldName:@"id"];
-            //First condition in if may be useless
-            if(![beanId hasPrefix:LOCAL_ID_PREFIX] ||
-               ![beanId isEqualToString:self.invalidBean] ||
-               ![[dataObject objectForFieldName:@"deleted"] isEqualToString:@"1"])
-            {
-                [tableData addObject:dataObject];
-            }
-        }
+//        for (DataObject* dataObject in datasource) {
+//            beanId = (NSString *)[dataObject objectForFieldName:@"id"];
+//            //First condition in if may be useless
+//            if(![beanId isEqualToString:self.invalidBean] ||
+//               ![[dataObject objectForFieldName:@"deleted"] isEqualToString:@"1"])
+//            {
+//                [tableData addObject:dataObject];
+//            }
+//        }
         
-        for(DataObject* dataObject in records)
-        {
-            if(![[dataObject objectForFieldName:@"deleted"] isEqualToString:@"1"])
-            {
-                [tableData addObject:dataObject];
-            }
-        }
+//        for(DataObject* dataObject in records)
+//        {
+//            if(![[dataObject objectForFieldName:@"deleted"] isEqualToString:@"1"])
+//            {
+//                [tableData addObject:dataObject];
+//            }
+//        }
+        [tableData addObjectsFromArray:records];
         
         [lvc sortData];
         datasource = nil;
-        datasource = [tableData copy];
+        datasource = [NSArray arrayWithArray:tableData];
         
         NSLog(@"Number of records in module %@ : %d", self.moduleName, tableData.count);
         // Load UI on mail queue
         dispatch_async(dispatch_get_main_queue(), ^(void){
             [myTableView reloadData];
+            [sBar resignFirstResponder];
+            sBar.text = @"";
+            if ([tableData count]>0) {
+                [myTableView scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:0] atScrollPosition:UITableViewScrollPositionTop animated:YES];
+            }
+            
         });
     };
     
@@ -290,7 +296,8 @@
     dbSession.errorBlock = errorBlock;
 //    [dbSession startLoading];
     NSString *orderField = [[NSUserDefaults standardUserDefaults] objectForKey:[NSString stringWithFormat:@"key_%@_%@",moduleName,kSettingTitleForSortField]];
-    [dbSession rowsFromDBWithLimit:kRowLimit andOffset:[datasource count] orderBy:orderField];
+//    [dbSession rowsFromDBWithLimit:kRowLimit andOffset:[datasource count] orderBy:orderField];
+    [dbSession rowsFromDBWithLimit:kRowLimit andOffset:0 orderBy:orderField];
 }
 
 -(void)addRows
@@ -529,7 +536,7 @@
     if (!isDeleting) {
         NSUInteger row = [indexPath row]+1;
         NSUInteger count = [tableData count];
-        if (row == count) {
+        if (row == count && searchCancelled) {
 			[self performSelector:@selector(addRows) withObject:nil afterDelay:.1];
         }
     }
@@ -553,7 +560,7 @@
             [appDelegate.recentItems setObject:[NSMutableArray arrayWithObject:beanId] forKey:moduleName];
         }
         DetailViewController *detailViewController = [DetailViewController detailViewcontroller:[[SugarCRMMetadataStore sharedInstance] detailViewMetadataForModule:metadata.moduleName] beanId:beanId beanTitle:beanTitle];
-        self.invalidBean = (NSString *)beanId;
+//        self.invalidBean = (NSString *)beanId;
         detailViewController.shouldCotainToolBar = YES;
          [self.navigationController pushViewController:detailViewController animated:YES];
     }
@@ -719,7 +726,7 @@
 }
 
 -(void)dealloc{
-    self.invalidBean = nil;
+//    self.invalidBean = nil;
 }
 
 @end
