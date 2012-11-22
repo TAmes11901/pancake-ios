@@ -16,6 +16,7 @@
 #import "DetailViewController.h"
 #import "stdlib.h"
 #import "EditViewController.h"
+#import "DBHelper.h"
 
 #define kActionSheetAddButtonIndex            0
 #define kActionSheetDeleteButtonIndex         1
@@ -229,6 +230,8 @@
     
     UIBarButtonItem *barButtonItem = [[UIBarButtonItem alloc] initWithCustomView:self.segmentedControl];
     self.navigationItem.rightBarButtonItem = barButtonItem;
+    NSInteger nRecords = [DBHelper getRecordCountInModule:self.moduleName];
+    ULog(@"Number of records : %d ", nRecords);
     [self loadData];
   }
 

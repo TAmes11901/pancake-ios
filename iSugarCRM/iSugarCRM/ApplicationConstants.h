@@ -33,7 +33,7 @@
 
 #define kRowLimit                       50
 #define kOptimalMaxRecords              2000
-#define kMinValueForMaxRecords          100
+#define kMinValueForMaxRecords          1
 #define kResultsPerPage                 1000
 
 // Setting Store keys

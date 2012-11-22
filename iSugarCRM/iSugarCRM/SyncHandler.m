@@ -238,7 +238,9 @@ static SyncHandler *sharedInstance;
     if ( totalRecords > 0) {
         NSInteger storedMaxRecords = [SettingsStore integerForKey:kSettingsStoreMaxRecordsKey];
         
-        for (int offset = 0 ; offset < (totalRecords <= storedMaxRecords ? totalRecords : storedMaxRecords); offset += kResultsPerPage) {
+        NSInteger maxResultsPerPage = storedMaxRecords > kResultsPerPage ? kResultsPerPage : storedMaxRecords ;
+        
+        for (int offset = 0 ; offset < (totalRecords <= storedMaxRecords ? totalRecords : storedMaxRecords); offset += maxResultsPerPage) {
             // Add request queues to download the remaining data
             WebserviceMetadata* metadata = [[SugarCRMMetadataStore sharedInstance] webservice_readMetadataForModule:moduleName];
             

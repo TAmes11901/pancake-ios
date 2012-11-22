@@ -165,6 +165,8 @@ BOOL isFirstTime;
 
 -(void) viewDidDisappear:(BOOL)animated
 {
+    [self saveSettingsToStore];
+    
     [[NSNotificationCenter defaultCenter] removeObserver:self name:@"SugarSyncComplete" object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:@"SugarSyncFailed" object:nil];
     [super viewDidDisappear:animated];

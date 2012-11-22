@@ -12,7 +12,7 @@
 #import "SettingsStore.h"
 #import "DateUtils.h"
 
-# define kMaxRecords        @"1000"
+# define kMaxRecords        1000
 
 static inline NSString* httpMethodAsString(HTTPMethod method){
     switch (method) {
@@ -134,7 +134,11 @@ static inline NSString* httpMethodAsString(HTTPMethod method){
     
     [self addSelectFieldsAndLinkFields:restDataDictionary];
     
-    [restDataDictionary setObject:kMaxRecords forKey:@"max_results"];
+    NSInteger storedMaxRecords = [SettingsStore integerForKey:kSettingsStoreMaxRecordsKey];
+    
+    NSInteger maxResultsPerPage = storedMaxRecords > kMaxRecords ? kMaxRecords : storedMaxRecords ;
+    
+    [restDataDictionary setObject:[NSString stringWithFormat:@"%d",maxResultsPerPage] forKey:@"max_results"];
     
     [self setUrlParam:[restDataDictionary JSONString] forKey:@"rest_data"];
     

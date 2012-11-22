@@ -122,4 +122,46 @@
     [db closeDatabase];
     return rows;
  }
+
++ (NSInteger) getRecordCountInModule:(NSString*) moduleName
+{
+    SqliteObj* db = [[SqliteObj alloc] init];
+    SugarCRMMetadataStore *sharedInstance = [SugarCRMMetadataStore sharedInstance];
+    DBMetadata *dbMetadata = [sharedInstance dbMetadataForModule:moduleName];
+    NSError* error = nil;
+    
+    int count = 0;
+    
+    if(![db initializeDatabaseWithError:&error]){
+        DLog(@"%@",[error localizedDescription]);
+    } else{
+    
+        NSString *sql = [NSString stringWithFormat:@"SELECT COUNT(*) FROM %@ ;",dbMetadata.tableName];
+        
+        sqlite3_stmt *statement = [db executeQuery:sql error:&error];
+        
+        if(! error)
+        {
+            //Loop through all the returned rows (should be just one)
+            while( sqlite3_step(statement) == SQLITE_ROW )
+            {
+                count = sqlite3_column_int(statement, 0);
+            }
+        }
+        else
+        {
+            DLog( @"Failed to fetch count Error is:  %@", [error description]);
+        }
+        
+        // Finalize and close database.
+        sqlite3_finalize(statement);
+    }
+    
+    [db closeDatabase];
+    
+    return count;
+    
+    
+
+}
 @end

@@ -12,4 +12,5 @@
 +(void) updateUserTable:(NSArray*) userList;
 +(NSArray*) loadUserList;
 +(NSArray*) loadRecordsinModule:(NSString*) moduleName;
++ (NSInteger) getRecordCountInModule:(NSString*) moduleName;
 @end
